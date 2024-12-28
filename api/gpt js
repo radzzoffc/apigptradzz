@@ -1,0 +1,49 @@
+const express = require('express');
+const axios = require('axios');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+
+// Route Utama
+app.post('/api/gpt', async (req, res) => {
+  const { prompt } = req.body;
+
+  if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+  }
+
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/completions',
+      {
+        model: "text-davinci-003",
+        prompt: prompt,
+        max_tokens: 150
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    return res.status(200).json({ data: response.data.choices[0].text });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Failed to fetch GPT response' });
+  }
+});
+
+// Jalankan server di lokal (untuk Termux)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Server berjalan di http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
